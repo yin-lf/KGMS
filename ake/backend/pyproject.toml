@@ -1,0 +1,18 @@
+[project]
+name = "arxiv_paper_kg_backend"
+version = "0.1.0"
+description = "arxiv paper knowledge graph backend"
+readme = "README.md"
+requires-python = ">=3.12.3"
+dependencies = [
+    "flask>=3.1.2",
+    "flask-cors>=6.0.1",
+    "marshmallow>=4.0.1",
+    "neo4j>=5.28.2",
+    "pytest>=8.4.2",
+    "requests>=2.32.5",
+]
+
+[[tool.uv.index]]
+url = "https://mirrors.aliyun.com/pypi/simple/"
+default = true
