@@ -1,6 +1,6 @@
 # arxiv 知识图谱数据库后端
 
-基于Flask的arxiv论文知识图谱API服务, 使用Neo4j图数据库存储和管理学术论文, 作者, 分类及其关系数据.
+基于Flask的arxiv论文知识图谱API服务, 使用Neo4j图数据库存储和管理学术论文, 作者, 分类及其关系数据. 
 
 ## 功能特性
 
@@ -49,13 +49,10 @@
 #### 安装 uv
 
 - Linux & Mac
-
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
-
 - Windows
-
 ```ps
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
@@ -68,7 +65,7 @@ uv sync
 
 ### 配置数据库
 
-确保Neo4j数据库已启动, 并配置相应的连接参数(在 `akb/const.py` 中).
+确保Neo4j数据库已启动, 并配置相应的连接参数(在 `akb/const.py` 中). 
 
 ```python
 NEO4J_URI = "bolt://localhost:7687"
@@ -82,7 +79,7 @@ NEO4J_PASSWORD = "yourpassword"
 uv run app.py
 ```
 
-服务将在 `http://localhost:5000` 启动.
+服务将在 `http://localhost:5000` 启动. 
 
 ### 健康检查
 
@@ -92,12 +89,11 @@ curl http://localhost:5000/health
 
 ## API 文档
 
-详细的API接口文档请参考 [API_README.md](API_README.md).
+详细的API接口文档请参考 [API_README.md](API_README.md). 
 
-主要API端点:
-
+主要API端点: 
 - `/api/kg/authors` - 作者管理
-- `/api/kg/papers` - 论文管理
+- `/api/kg/papers` - 论文管理  
 - `/api/kg/categories` - 分类管理
 - `/api/kg/relationships` - 关系查询
 - `/api/kg/data` - 数据管理
@@ -107,11 +103,9 @@ curl http://localhost:5000/health
 - 后端测试
 
 ```bash
-uv run pytest akb/tests/
+uv run pytest akb/test/
 ```
-
 - 前后端交接部分测试
-
 ```bash
 uv run pytest test/
 ```

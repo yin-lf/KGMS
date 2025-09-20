@@ -1,7 +1,6 @@
-from flask import request
+from flask import Blueprint, request
 from marshmallow import Schema, fields, ValidationError
-from . import api_bp, create_response
-from akb import GraphService
+from ..core import create_response, graph_service
 
 
 class AuthorSchema(Schema):
@@ -10,11 +9,11 @@ class AuthorSchema(Schema):
     )
 
 
-graph_service = GraphService()
+authors_bp = Blueprint("authors", __name__, url_prefix="/api/kg/authors")
 author_schema = AuthorSchema()
 
 
-@api_bp.route("/authors", methods=["POST"])
+@authors_bp.route("", methods=["POST"])
 def add_author():
     try:
         json_data = request.get_json()
@@ -44,7 +43,7 @@ def add_author():
         return create_response(False, error=str(e)), 500
 
 
-@api_bp.route("/authors/<string:name>", methods=["GET"])
+@authors_bp.route("/<string:name>", methods=["GET"])
 def get_author(name: str):
     try:
         author = graph_service.find_author_info(name)
@@ -66,7 +65,7 @@ def get_author(name: str):
         return create_response(False, error=str(e)), 500
 
 
-@api_bp.route("/authors", methods=["GET"])
+@authors_bp.route("", methods=["GET"])
 def list_authors():
     try:
         authors = graph_service.get_all_authors()
@@ -81,7 +80,7 @@ def list_authors():
         return create_response(False, error=str(e)), 500
 
 
-@api_bp.route("/authors/<string:name>", methods=["DELETE"])
+@authors_bp.route("/<string:name>", methods=["DELETE"])
 def delete_author(name: str):
     try:
         existing_author = graph_service.find_author_info(name)

@@ -1,6 +1,8 @@
 import enum
 
-from akb.config import NEO4J_PASSWORD, NEO4J_URI, NEO4J_USER
+NEO4J_URI = "bolt://localhost:7687"
+NEO4J_USER = "neo4j"
+NEO4J_PASSWORD = "33214432"
 
 CATEGORIES = {
     # 物理学相关 (已弃用的早期分类)
@@ -204,3 +206,4 @@ class RelationType(enum.Enum):
     AUTHORED_BY = enum.auto()
     BELONGS_TO = enum.auto()
     CONTAINS = enum.auto()
+    LIKES = enum.auto()

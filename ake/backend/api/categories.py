@@ -1,7 +1,6 @@
-from flask import request
+from flask import Blueprint, request
 from marshmallow import Schema, fields, ValidationError
-from . import api_bp, create_response
-from akb import GraphService
+from ..core import create_response, graph_service
 
 
 class CategorySchema(Schema):
@@ -16,12 +15,12 @@ class CategoryUpdateSchema(Schema):
     )
 
 
-graph_service = GraphService()
+categories_bp = Blueprint("categories", __name__, url_prefix="/api/kg/categories")
 category_schema = CategorySchema()
 category_update_schema = CategoryUpdateSchema()
 
 
-@api_bp.route("/categories", methods=["POST"])
+@categories_bp.route("", methods=["POST"])
 def add_category():
     try:
         json_data = request.get_json()
@@ -54,7 +53,7 @@ def add_category():
         return create_response(False, error=str(e)), 500
 
 
-@api_bp.route("/categories/<string:name>", methods=["GET"])
+@categories_bp.route("/<string:name>", methods=["GET"])
 def get_category(name: str):
     try:
         category = graph_service.find_category(name)
@@ -78,7 +77,7 @@ def get_category(name: str):
         return create_response(False, error=str(e)), 500
 
 
-@api_bp.route("/categories/<string:old_name>", methods=["PUT"])
+@categories_bp.route("/<string:old_name>", methods=["PUT"])
 def update_category(old_name: str):
     try:
         existing_category = graph_service.find_category(old_name)
@@ -123,7 +122,7 @@ def update_category(old_name: str):
         return create_response(False, error=str(e)), 500
 
 
-@api_bp.route("/categories/<string:name>", methods=["DELETE"])
+@categories_bp.route("/<string:name>", methods=["DELETE"])
 def delete_category(name: str):
     try:
         existing_category = graph_service.find_category(name)
@@ -138,7 +137,7 @@ def delete_category(name: str):
         return create_response(False, error=str(e)), 500
 
 
-@api_bp.route("/categories", methods=["GET"])
+@categories_bp.route("", methods=["GET"])
 def list_categories():
     """获取所有分类列表"""
     try:

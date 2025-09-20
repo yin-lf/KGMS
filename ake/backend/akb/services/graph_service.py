@@ -25,34 +25,9 @@ class GraphService:
         )
         return result.single()[0]
 
-    # def add_paper(self, paper_id: str, title: str, abstract: Optional[str] = None):
-    #     with self.driver.session() as session:
-    #         return session.execute_write(self._create_paper, paper_id, title, abstract)
-    # 支持前端传入五个参数{ id, title, abstract, authors, categories }
-    def add_paper(
-        self,
-        paper_id: str,
-        title: str,
-        abstract: Optional[str] = None,
-        authors: Optional[List[str]] = None,
-        categories: Optional[List[str]] = None,
-    ):
+    def add_paper(self, paper_id: str, title: str, abstract: Optional[str] = None):
         with self.driver.session() as session:
-            # 创建论文节点
-            session.execute_write(self._create_paper, paper_id, title, abstract)
-
-            # 创建作者节点并关联
-            if authors:
-                for author in authors:
-                    self.add_author(author)
-                    self.link_author_to_paper(author, paper_id)
-
-            # 创建分类节点并关联
-            if categories:
-                for category in categories:
-                    self.add_category(category)
-                    self.link_paper_to_category(paper_id, category)
-
+            return session.execute_write(self._create_paper, paper_id, title, abstract)
 
     @staticmethod
     def _create_paper(tx, paper_id: str, title: str, abstract: Optional[str] = None):

@@ -1,7 +1,6 @@
-from flask import request
+from flask import Blueprint, request
 from marshmallow import Schema, fields, ValidationError
-from . import api_bp, create_response
-from akb import GraphService
+from ..core import create_response, graph_service
 
 
 class AuthorPaperLinkSchema(Schema):
@@ -22,12 +21,14 @@ class PaperCategoryLinkSchema(Schema):
     )
 
 
-graph_service = GraphService()
+relationships_bp = Blueprint(
+    "relationships", __name__, url_prefix="/api/kg/relationships"
+)
 author_paper_link_schema = AuthorPaperLinkSchema()
 paper_category_link_schema = PaperCategoryLinkSchema()
 
 
-@api_bp.route("/relationships/author-paper", methods=["POST"])
+@relationships_bp.route("/author-paper", methods=["POST"])
 def link_author_to_paper():
     try:
         json_data = request.get_json()
@@ -66,7 +67,7 @@ def link_author_to_paper():
         return create_response(False, error=str(e)), 500
 
 
-@api_bp.route("/relationships/author-paper", methods=["DELETE"])
+@relationships_bp.route("/author-paper", methods=["DELETE"])
 def unlink_author_from_paper():
     try:
         json_data = request.get_json()
@@ -102,7 +103,7 @@ def unlink_author_from_paper():
         return create_response(False, error=str(e)), 500
 
 
-@api_bp.route("/relationships/paper-category", methods=["POST"])
+@relationships_bp.route("/paper-category", methods=["POST"])
 def link_paper_to_category():
     try:
         json_data = request.get_json()
@@ -141,7 +142,7 @@ def link_paper_to_category():
         return create_response(False, error=str(e)), 500
 
 
-@api_bp.route("/relationships/paper-category", methods=["DELETE"])
+@relationships_bp.route("/paper-category", methods=["DELETE"])
 def unlink_paper_from_category():
     try:
         json_data = request.get_json()
