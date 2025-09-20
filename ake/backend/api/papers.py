@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from ..core import create_response, graph_service
+from core import create_response, graph_service
 from marshmallow import Schema, fields, ValidationError
 
 

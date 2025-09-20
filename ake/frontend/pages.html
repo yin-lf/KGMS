@@ -9,7 +9,9 @@
   <h1>知识图谱管理信息系统</h1>
   <nav>
     <button onclick="showSection('query')">查询</button>
-    <button onclick="showSection('update')">更新</button>
+    <button onclick="showSection('add')">新增</button>
+    <button onclick="showSection('modify')">修改</button>
+    <button onclick="showSection('delete')">删除</button>
   </nav>
 
   <!-- 查询模块 -->
@@ -20,9 +22,9 @@
     <pre id="queryResult"></pre>
   </section>
 
-  <!-- 更新模块 -->
-  <section id="update" class="page hidden">
-    <h2>✏️ 更新知识图谱</h2>
+  <!-- 新增模块 -->
+  <section id="add" class="page hidden">
+    <h2>➕ 新增数据</h2>
 
     <!-- 新增论文 -->
     <div class="form">
@@ -49,7 +51,67 @@
 
     <!-- 提交按钮 -->
     <button onclick="submitPaper()">提交论文</button>
-    <pre id="updateResult"></pre>
+    <pre id="addResult"></pre>
+  </section>
+
+  <!-- 修改模块 -->
+  <section id="modify" class="page hidden">
+    <h2>✏️ 修改数据</h2>
+
+    <!-- 更新作者 -->
+    <div class="form">
+      <h3>更新作者</h3>
+      <input id="oldAuthorName" placeholder="原作者名">
+      <input id="newAuthorName" placeholder="新作者名">
+      <button onclick="updateAuthor()">更新作者</button>
+    </div>
+
+    <!-- 更新论文 -->
+    <div class="form">
+      <h3>更新论文</h3>
+      <input id="updatePaperId" placeholder="论文ID">
+      <input id="updatePaperTitle" placeholder="新论文标题">
+      <textarea id="updatePaperAbstract" placeholder="新论文摘要"></textarea>
+      <button onclick="updatePaper()">更新论文</button>
+    </div>
+
+    <!-- 更新分类 -->
+    <div class="form">
+      <h3>更新分类</h3>
+      <input id="oldCategoryName" placeholder="原分类名">
+      <input id="newCategoryName" placeholder="新分类名">
+      <button onclick="updateCategory()">更新分类</button>
+    </div>
+
+    <pre id="modifyResult"></pre>
+  </section>
+
+  <!-- 删除模块 -->
+  <section id="delete" class="page hidden">
+    <h2>🗑️ 删除数据</h2>
+
+    <!-- 删除作者 -->
+    <div class="form">
+      <h3>删除作者</h3>
+      <input id="deleteAuthorName" placeholder="作者名">
+      <button onclick="deleteAuthor()">删除作者</button>
+    </div>
+
+    <!-- 删除论文 -->
+    <div class="form">
+      <h3>删除论文</h3>
+      <input id="deletePaperId" placeholder="论文ID">
+      <button onclick="deletePaper()">删除论文</button>
+    </div>
+
+    <!-- 删除分类 -->
+    <div class="form">
+      <h3>删除分类</h3>
+      <input id="deleteCategoryName" placeholder="分类名">
+      <button onclick="deleteCategory()">删除分类</button>
+    </div>
+
+    <pre id="deleteResult"></pre>
   </section>
 
   <script src="app.js"></script>

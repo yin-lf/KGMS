@@ -1,13 +1,13 @@
 from flask import Flask
 from flask_cors import CORS
-from .core import create_response
-from .api.authors import authors_bp
-from .api.papers import papers_bp
-from .api.categories import categories_bp
-from .api.relationships import relationships_bp
-from .api.data import data_bp
-from .api.auth import auth_bp
-from .api.recommendations import recommendations_bp
+from core import create_response
+from api.authors import authors_bp
+from api.papers import papers_bp
+from api.categories import categories_bp
+from api.relationships import relationships_bp
+from api.data import data_bp
+from api.auth import auth_bp
+from api.recommendations import recommendations_bp
 
 
 app = Flask(__name__)

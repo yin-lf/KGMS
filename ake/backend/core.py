@@ -1,6 +1,6 @@
 from flask import jsonify
 from typing import Any
-from .akb import GraphService
+from akb import GraphService
 
 graph_service = GraphService()
 

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session
-from ..akb.services.user_service import UserService
-from ..core import create_response
+from akb.services.user_service import UserService
+from core import create_response
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 

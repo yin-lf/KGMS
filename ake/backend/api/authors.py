@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from marshmallow import Schema, fields, ValidationError
-from ..core import create_response, graph_service
+from core import create_response, graph_service
 
 
 class AuthorSchema(Schema):
@@ -8,9 +8,14 @@ class AuthorSchema(Schema):
         required=True, error_messages={"required": "Author name is required"}
     )
 
+class AuthorUpdateSchema(Schema):
+    name = fields.Str(
+        required=True, error_messages={"required": "New author name is required"}
+    )
 
 authors_bp = Blueprint("authors", __name__, url_prefix="/api/kg/authors")
 author_schema = AuthorSchema()
+author_update_schema = AuthorUpdateSchema()
 
 
 @authors_bp.route("", methods=["POST"])
@@ -76,6 +81,49 @@ def list_authors():
             True, data=all_authors, message="Get authors list successfully"
         )
 
+    except Exception as e:
+        return create_response(False, error=str(e)), 500
+
+@authors_bp.route("/<string:old_name>", methods=["PUT"])
+def update_author(old_name: str):
+    try:
+        existing_author = graph_service.find_author_info(old_name)
+        if not existing_author:
+            return create_response(False, error=f"Author '{old_name}' not found"), 404
+
+        json_data = request.get_json()
+        if not json_data:
+            return create_response(False, error="Empty Request Data"), 400
+
+        result = author_update_schema.load(json_data)
+        new_name = result["name"]
+
+        if old_name != new_name:
+            existing_new_author = graph_service.find_author_info(new_name)
+            if existing_new_author:
+                return (
+                    create_response(
+                        False, error=f"Author '{new_name}' already exists"
+                    ),
+                    409,
+                )
+
+        graph_service.update_author(old_name, new_name)
+
+        updated_author = graph_service.find_author_info(new_name)
+        author_data = {
+            "name": updated_author.name,
+            "papers": [
+                {"id": paper[0], "title": paper[1]} for paper in updated_author.papers
+            ],
+        }
+
+        return create_response(
+            True, data=author_data, message=f"Author '{old_name}' updated successfully"
+        )
+
+    except ValidationError as err:
+        return create_response(False, error=str(err.messages)), 400
     except Exception as e:
         return create_response(False, error=str(e)), 500
 
