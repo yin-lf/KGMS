@@ -1,5 +1,5 @@
 import enum
-from ..config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
+from .config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
 
 CATEGORIES = {
     # 物理学相关 (已弃用的早期分类)
