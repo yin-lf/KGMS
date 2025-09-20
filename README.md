@@ -19,7 +19,7 @@ KGMS (Knowledge Graph Management System) 是一个功能完备的知识图谱管
 
 | 类别   | 技术                               |
 | :----- | :--------------------------------- |
-| **后端** | Python, Flask, Neo4j, `uv`         |
+| **后端** | Python, Flask, Neo4j, uv         |
 | **前端** | HTML, CSS, JavaScript              |
 | **数据库** | Neo4j Graph Database               |
 
