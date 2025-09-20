@@ -1,7 +1,8 @@
-from flask import request
+from flask import Blueprint, request
 from marshmallow import Schema, fields, ValidationError
-from . import api_bp, create_response
-from akb import GraphService
+from ..core import create_response, graph_service
+
+data_bp = Blueprint("data", __name__, url_prefix="/api/kg/data")
 
 
 class JsonDataSchema(Schema):
@@ -19,113 +20,45 @@ class JsonDataSchema(Schema):
     )
 
 
-graph_service = GraphService()
-json_data_schema = JsonDataSchema()
+@data_bp.route("/info", methods=["GET"])
+def get_overview_info():
+    info = graph_service.get_overview_info()
+    return create_response(data=info)
 
 
-@api_bp.route("/data/info", methods=["GET"])
-def get_graph_overview_info():
+@data_bp.route("/load", methods=["POST"])
+def load_data():
+    json_data = request.get_json()
     try:
-        overview_info = graph_service.get_overview_info()
-        overview_data = {
-            "total_authors": overview_info.total_authors,
-            "total_papers": overview_info.total_papers,
-            "total_categories": overview_info.total_categories,
-            "num_papers_per_category": overview_info.num_papers_per_category,
-        }
-
-        return create_response(
-            True, data=overview_data, message="Get graph overview successfully"
-        )
-
+        graph_service.load_data_from_json(json_data)
+        return create_response(message="Data loaded successfully"), 201
     except Exception as e:
-        return create_response(False, error=str(e)), 500
+        return create_response(False, error=str(e)), 409
 
 
-@api_bp.route("/data/load", methods=["POST"])
-def load_data_from_json():
-    try:
-        json_data = request.get_json()
-        if not json_data:
-            return create_response(False, error="Empty Request Data"), 400
-
-        result = json_data_schema.load(json_data)
-        id = result["id"]
-        title = result["title"]
-        abstract = result.get("abstract")
-        authors = [a.strip() for a in result["authors"].split(",") if a.strip()]
-        categories = [c.strip() for c in result["categories"].split(",") if c.strip()]
-
-        existing_paper = graph_service.find_paper_by_id(id)
-        if existing_paper:
-            return (
-                create_response(False, error=f"paper '{id}' already exists"),
-                409,
-            )
-
-        graph_service.load_data_from_json(result)
-
-        return (
-            create_response(
-                True,
-                data={
-                    "id": id,
-                    "title": title,
-                    "abstract": abstract,
-                    "authors": authors,
-                    "categories": categories,
-                },
-                message=f"Data for paper '{id}' loaded successfully",
-            ),
-            201,
-        )
-
-    except ValidationError as err:
-        return create_response(False, error=str(err.messages)), 400
-    except Exception as e:
-        return create_response(False, error=str(e)), 500
-
-
-@api_bp.route("/data/clear", methods=["DELETE"])
+@data_bp.route("/clear", methods=["DELETE"])
 def clear_all_data():
-    try:
-        graph_service.clear_all_data()
-        return create_response(True, message="All data cleared successfully"), 200
-    except Exception as e:
-        return create_response(False, error=str(e)), 500
+    graph_service.clear_all_data()
+    return create_response(message="All data cleared successfully")
 
 
-@api_bp.route("/data/check_index", methods=["GET"])
-def check_fulltext_index():
-    try:
-        exists = graph_service.check_fulltext_index_exists()
-        message = (
-            "Full-text index exists" if exists else "Full-text index does not exist"
-        )
-        return create_response(True, data={"exists": exists}, message=message), 200
-    except Exception as e:
-        return create_response(False, error=str(e)), 500
+@data_bp.route("/check_index", methods=["GET"])
+def check_index():
+    exists = graph_service.check_fulltext_index_exists()
+    if exists:
+        return create_response(True, data=True, message="Full-text index exists")
+    else:
+        return create_response(True, data=False, message="Full-text index does not exist")
 
 
-@api_bp.route("/data/create_index", methods=["POST"])
-def create_fulltext_index():
-    try:
-        graph_service.create_fulltext_index()
-        return (
-            create_response(True, message="Full-text index created successfully"),
-            200,
-        )
-    except Exception as e:
-        return create_response(False, error=str(e)), 500
+@data_bp.route("/create_index", methods=["POST"])
+def create_index():
+    graph_service.create_fulltext_index()
+    return create_response(True, message="Full-text index created successfully")
 
 
-@api_bp.route("/data/drop_index", methods=["POST"])
-def drop_fulltext_index():
-    try:
-        graph_service.drop_fulltext_index()
-        return (
-            create_response(True, message="Full-text index dropped successfully"),
-            200,
-        )
-    except Exception as e:
-        return create_response(False, error=str(e)), 500
+@data_bp.route("/drop_index", methods=["POST"])
+def drop_index():
+    graph_service.drop_fulltext_index()
+    return create_response(True, message="Full-text index dropped successfully")
+

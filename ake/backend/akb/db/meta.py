@@ -29,6 +29,15 @@ class Paper:
     authors: List[str] = field(default_factory=list)
     categories: List[str] = field(default_factory=list)
 
+    def to_dict(self):
+        return {
+            "id": self.pid,
+            "title": self.title,
+            "abstract": self.abstract,
+            "authors": self.authors,
+            "categories": self.categories,
+        }
+
     @staticmethod
     def make_meta(
         pid: str,
@@ -90,4 +99,20 @@ class OverviewInfo:
             total_papers=total_papers,
             total_categories=total_categories,
             num_papers_per_category=num_papers_per_category,
+        )
+
+
+@dataclass
+class User:
+    username: str
+    password_hash: str
+
+    @staticmethod
+    def make_meta(
+        username: str,
+        password_hash: str,
+    ) -> "User":
+        return User(
+            username=username,
+            password_hash=password_hash,
         )

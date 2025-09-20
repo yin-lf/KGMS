@@ -1,23 +1,26 @@
-from flask import Flask, jsonify
+from flask import Flask
 from flask_cors import CORS
-from typing import Any
-from akb import GraphService
-from api import api_bp
+from .core import create_response
+from .api.authors import authors_bp
+from .api.papers import papers_bp
+from .api.categories import categories_bp
+from .api.relationships import relationships_bp
+from .api.data import data_bp
+from .api.auth import auth_bp
+from .api.recommendations import recommendations_bp
 
 
 app = Flask(__name__)
+app.secret_key = "your-very-secret-key"  # Add a secret key for session management
 CORS(app)
-app.register_blueprint(api_bp)
-graph_service = GraphService()
+app.register_blueprint(authors_bp)
+app.register_blueprint(papers_bp)
+app.register_blueprint(categories_bp)
+app.register_blueprint(relationships_bp)
+app.register_blueprint(data_bp)
+app.register_blueprint(auth_bp)
+app.register_blueprint(recommendations_bp)
 PORT = 5000
-
-
-def create_response(
-    success: bool = True, data: Any = None, message: str = "", error: str = ""
-):
-    return jsonify(
-        {"success": success, "data": data, "message": message, "error": error}
-    )
 
 
 @app.errorhandler(404)
@@ -59,8 +62,10 @@ def health_check():
         return create_response(False, error=str(e), message="Health check failed"), 500
 
 
+@app.route("/")
+def index():
+    return create_response(message="Welcome to the ArXiv Knowledge Base API!")
+
+
 if __name__ == "__main__":
-    print("Starting Knowledge Graph API Server...")
-    print(f"Health check: http://localhost:{PORT}/health")
-    print(f"API Base URL: http://localhost:{PORT}/api/v1")
-    app.run(debug=True, host="0.0.0.0", port=PORT)
+    app.run(host="0.0.0.0", port=PORT, debug=True)

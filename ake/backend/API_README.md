@@ -2,11 +2,23 @@
 
 ## 概述
 
-这是一个基于Flask的知识图谱API系统, 提供了作者, 论文, 分类和关系管理的完整功能. 所有API接口都使用 `/api/kg` 作为基础路径. 
+这是一个基于Flask的知识图谱API系统, 提供了作者, 论文, 分类和关系管理的完整功能. 所有API接口都使用 `/api/kg` 作为基础路径.
+
+## 环境设置与启动
+
+1.  **安装依赖**:
+    ```bash
+    pip install -r requirements.txt
+    ```
+2.  **启动服务**:
+    ```bash
+    flask run
+    ```
+    服务默认运行在 `http://127.0.0.1:5000`.
 
 ## 通用响应格式
 
-所有API接口返回统一的JSON格式: 
+所有API接口返回统一的JSON格式:
 
 ```json
 {
@@ -15,6 +27,18 @@
     "message": "成功或错误信息",
     "error": "错误详情(仅在失败时)"
 }
+```
+
+## 认证与授权
+
+部分接口需要用户认证后才能访问。请遵循以下步骤：
+
+1.  通过 `POST /api/auth/login` 接口登录，成功后会返回一个 `access_token`。
+2.  在请求需要认证的接口时，请在请求头中加入 `Authorization` 字段，格式为 `Bearer <your_access_token>`。
+
+**示例**:
+```bash
+curl -X GET http://localhost:5000/api/recommendations -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 ## 作者管理 API
@@ -61,9 +85,12 @@
 
 **请求**
 - **URL**: `GET /api/kg/authors`
+- **查询参数**:
+    - `page` (可选): 页码，默认为 1。
+    - `per_page` (可选): 每页数量，默认为 10。
 
 **响应**
-- **成功** (200): 返回所有作者及其发表论文信息
+- **成功** (200): 返回分页后的作者及其发表论文信息。
 
 ### 4. 删除作者
 
@@ -153,9 +180,12 @@
 
 **请求**
 - **URL**: `GET /api/kg/papers`
+- **查询参数**:
+    - `page` (可选): 页码，默认为 1。
+    - `per_page` (可选): 每页数量，默认为 10。
 
 **响应**
-- **成功** (200): 返回所有论文的详细信息
+- **成功** (200): 返回分页后的所有论文的详细信息。
 
 ## 分类管理 API
 
@@ -223,9 +253,12 @@
 
 **请求**
 - **URL**: `GET /api/kg/categories`
+- **查询参数**:
+    - `page` (可选): 页码，默认为 1。
+    - `per_page` (可选): 每页数量，默认为 10。
 
 **响应**
-- **成功** (200): 返回所有分类及其相关论文信息
+- **成功** (200): 返回分页后的所有分类及其相关论文信息。
 
 ## 关系管理 API
 
@@ -393,13 +426,89 @@
 }
 ```
 
+## 用户认证 API
+
+### 1. 用户注册
+
+**请求**
+- **URL**: `POST /api/auth/register`
+- **请求体**:
+```json
+{
+    "username": "用户名",
+    "password": "密码"
+}
+```
+
+**响应**
+- **成功** (201): 用户创建成功
+- **错误** (400): 用户名或密码缺失
+- **错误** (409): 用户已存在
+
+### 2. 用户登录
+
+**请求**
+- **URL**: `POST /api/auth/login`
+- **请求体**:
+```json
+{
+    "username": "用户名",
+    "password": "密码"
+}
+```
+
+**响应**
+- **成功** (200): 登录成功, 返回 `access_token`。
+- **错误** (401): 用户名或密码无效
+
+## 推荐与反馈 API
+
+**注意**: 以下所有接口均需要认证。
+
+### 1. 获取推荐
+
+**请求**
+- **URL**: `GET /api/recommendations`
+- **说明**: 基于用户的点赞历史，为其推荐相似的论文。
+
+**响应**
+- **成功** (200): 返回推荐论文列表
+- **错误** (401): 未认证或认证失败
+
+### 2. 用户反馈
+
+**请求**
+- **URL**: `POST /api/feedback`
+- **请求体**:
+```json
+{
+    "paper_id": "论文ID",
+    "liked": true/false
+}
+```
+
+**响应**
+- **成功** (200): 反馈记录成功
+- **错误** (400): 请求数据无效
+- **错误** (401): 未认证或认证失败
+
+### 3. 获取用户已点赞的文章
+
+**请求**
+- **URL**: `GET /api/liked`
+
+**响应**
+- **成功** (200): 返回用户已点赞的文章列表
+- **错误** (401): 未认证或认证失败
+
 ## 错误处理
 
-API使用标准HTTP状态码: 
+API使用标准HTTP状态码:
 
 - **200**: 请求成功
 - **201**: 资源创建成功
 - **400**: 请求参数错误
+- **401**: 未认证或认证失败
 - **404**: 资源未找到
 - **409**: 资源冲突(如重复创建)
 - **500**: 服务器内部错误
@@ -408,43 +517,45 @@ API使用标准HTTP状态码:
 
 ### 创建完整的知识图谱数据流程
 
-1. 添加作者: 
-```bash
-curl -X POST http://localhost:5000/api/kg/authors \
-  -H "Content-Type: application/json" \
-  -d '{"name": "张三"}'
-```
+1.  添加作者:
+    ```bash
+    curl -X POST http://localhost:5000/api/kg/authors 
+      -H "Content-Type: application/json" 
+      -d '{"name": "张三"}'
+    ```
 
-2. 添加论文: 
-```bash
-curl -X POST http://localhost:5000/api/kg/papers \
-  -H "Content-Type: application/json" \
-  -d '{"id": "P001", "title": "深度学习研究", "abstract": "这是一篇关于深度学习的论文"}'
-```
+2.  添加论文:
+    ```bash
+    curl -X POST http://localhost:5000/api/kg/papers 
+      -H "Content-Type: application/json" 
+      -d '{"id": "P001", "title": "深度学习研究", "abstract": "这是一篇关于深度学习的论文"}'
+    ```
 
-3. 添加分类: 
-```bash
-curl -X POST http://localhost:5000/api/kg/categories \
-  -H "Content-Type: application/json" \
-  -d '{"name": "人工智能"}'
-```
+3.  添加分类:
+    ```bash
+    curl -X POST http://localhost:5000/api/kg/categories 
+      -H "Content-Type: application/json" 
+      -d '{"name": "人工智能"}'
+    ```
 
-4. 建立关联关系: 
-```bash
-curl -X POST http://localhost:5000/api/kg/relationships/author-paper \
-  -H "Content-Type: application/json" \
-  -d '{"author": "张三", "id": "P001"}'
+4.  建立关联关系:
+    ```bash
+    # 关联作者与论文
+    curl -X POST http://localhost:5000/api/kg/relationships/author-paper 
+      -H "Content-Type: application/json" 
+      -d '{"name": "张三", "id": "P001"}'
 
-curl -X POST http://localhost:5000/api/kg/relationships/paper-category \
-  -H "Content-Type: application/json" \
-  -d '{"id": "P001", "category_name": "人工智能"}'
-```
+    # 关联论文与分类
+    curl -X POST http://localhost:5000/api/kg/relationships/paper-category 
+      -H "Content-Type: application/json" 
+      -d '{"id": "P001", "name": "人工智能"}'
+    ```
 
 ## 注意事项
 
-1. 所有POST和PUT请求都需要设置`Content-Type: application/json`
-2. 数据验证使用Marshmallow schema, 会返回详细的验证错误信息
-3. 所有字符串参数都会进行空格清理
-4. 删除操作会同时清理相关的关联关系
-5. 搜索功能支持模糊匹配
-6. 批量数据加载会自动创建相关的作者, 分类和关联关系
+1.  所有`POST`和`PUT`请求都需要设置`Content-Type: application/json`。
+2.  数据验证使用`Marshmallow` schema, 会返回详细的验证错误信息。
+3.  所有字符串参数都会进行首尾空格清理。
+4.  删除操作会同时清理相关的关联关系。
+5.  搜索功能支持模糊匹配。
+6.  批量数据加载会自动创建相关的作者, 分类和关联关系.

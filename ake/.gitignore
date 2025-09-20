@@ -1,0 +1,10 @@
+output/
+arxiv-metadata-oai-snapshot.json
+backend/__pycache__/
+backend/akb/__pycache__/
+backend/akb/db/__pycache__/
+backend/akb/tests/__pycache__/
+backend/akb/services/__pycache__/
+backend/akb/db/__pycache__/
+backend/api/__pycache__/
+backend/test/__pycache__/
