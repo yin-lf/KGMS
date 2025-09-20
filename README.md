@@ -5,7 +5,7 @@ knowledge-graph--management-system. 知识工程综合实践——开发具有�
 
 后端API文档：`ake\backend\API_README.md`
 
-后端启动及测试：首先修改`ake\backend\akb\config.py`中`NEO4J_PASSWORD`等常量，启动本地Neo4j数据库，随后执行：
+后端启动及测试：首先创建/修改`ake\backend\config.py`中`NEO4J_PASSWORD`等常量，启动本地Neo4j数据库，随后执行：
 ```sh
 cd ake
 python -m backend.app

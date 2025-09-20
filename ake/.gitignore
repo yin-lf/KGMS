@@ -8,3 +8,6 @@ backend/akb/services/__pycache__/
 backend/akb/db/__pycache__/
 backend/api/__pycache__/
 backend/test/__pycache__/
+backend/*.pyc
+
+backend/config.py
