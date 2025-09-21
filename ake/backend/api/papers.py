@@ -164,9 +164,14 @@ def search_papers():
             return create_response(False, error="Page must be at least 1"), 400
         if page_size < 1 or page_size > 100:
             return create_response(False, error="Page size must be between 1 and 100"), 400
-
-        # 调用支持分页的搜索方法
-        papers = graph_service.search_papers(query, page, page_size)
+        skip = (page - 1) * page_size
+        
+        # 调用支持分页的搜索方法，传递正确的参数
+        papers = graph_service.search_papers(
+            query_string=query,
+            limit=page_size,
+            skip=skip
+        )
 
         papers_data = [
             {
@@ -186,7 +191,8 @@ def search_papers():
                 "pagination": {
                     "page": page,
                     "page_size": page_size,
-                    "total": len(papers_data)
+                    "total": len(papers_data),
+                    "has_more": len(papers_data) == page_size
                 }
             }, 
             message=f"Found {len(papers_data)} related papers"
