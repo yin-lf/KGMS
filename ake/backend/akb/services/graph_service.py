@@ -1,4 +1,5 @@
 import re
+import time
 from typing import Optional, List, Dict
 from .. import db
 from ..db import CacheType
@@ -449,6 +450,15 @@ class GraphService:
                 self._search_papers, query_string, limit, skip
             )
 
+            # If no results found but there are papers in DB, index might need time to update
+            if not result and skip == 0:  # Only retry for first page
+                paper_count = session.execute_read(self._count_papers)
+                if paper_count > 0:
+                    time.sleep(0.5)  # Wait for index to catch up
+                    result = session.execute_read(
+                        self._search_papers, query_string, limit, skip
+                    )
+
         # Cache the result with dependencies
         # Search results depend on all papers in the result set
         dependencies = [f"paper:{paper.pid}" for paper in result]
@@ -505,6 +515,13 @@ class GraphService:
                     )
                 )
         return papers
+
+    @staticmethod
+    def _count_papers(tx) -> int:
+        """Count total number of papers in the database."""
+        result = tx.run("MATCH (p:Paper) RETURN count(p) as count")
+        record = result.single()
+        return record["count"] if record else 0
 
     def check_fulltext_index_exists(self) -> bool:
         with self.driver.session() as session:
