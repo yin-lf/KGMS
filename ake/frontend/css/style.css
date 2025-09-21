@@ -128,3 +128,70 @@ nav button.active {
   background: #5078a1;
   font-weight: bold;
 }
+#queryResult {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  padding: 15px;
+  margin-top: 15px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.paper-item {
+  background-color: white;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.paper-id {
+  color: #007bff;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.paper-title {
+  color: #2c3e50;
+  font-weight: 600;
+  margin: 5px 0;
+  font-size: 1.1em;
+}
+
+.authors-list {
+  color: #6c757d;
+  margin: 5px 0;
+  font-style: italic;
+}
+
+.abstract {
+  color: #495057;
+  margin: 8px 0 0 0;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-left: 3px solid #007bff;
+  border-radius: 2px;
+}
+
+.search-stats {
+  color: #28a745;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.author-info {
+  background-color: white;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.author-name {
+  color: #dc3545;
+  font-weight: bold;
+  font-size: 1.2em;
+}

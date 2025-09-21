@@ -346,55 +346,120 @@ async function updateCategory() {
 }
 
 /*============查===============*/
+
+function formatPaper(paper) {
+  if (!paper) return "未找到论文信息。";
+  let result = "";
+  result += `<strong>--- 论文信息 ---</strong><br>`;
+  result += `ID: ${paper.id || 'N/A'}<br>`;
+  result += `标题: ${paper.title || 'N/A'}<br>`;
+  // 处理作者信息
+  if (paper.authors && paper.authors.length > 0) {
+    const authorNames = paper.authors.map(author => 
+      author.name || (typeof author === 'string' ? author : '未知作者')
+    );
+    result += `作者: ${authorNames.join(', ')}<br>`;
+  } else {
+    result += `作者: N/A<br>`;
+  }
+  // 分类信息 - 现在我们知道分类信息可能存在
+  if (paper.category) {
+    // 如果分类信息直接包含在paper对象中
+    result += `分类: ${paper.category.name || paper.category}<br>`;
+  } else if (paper.categories && paper.categories.length > 0) {
+    // 如果有多个分类
+    const categoryNames = paper.categories.map(cat => cat.name || cat);
+    result += `分类: ${categoryNames.join(', ')}<br>`;
+  } else {
+    result += `分类: N/A<br>`;
+  }
+  if (paper.abstract) {
+    // 截断摘要以保持简洁
+    const abstractPreview = paper.abstract.length > 500 ? 
+      paper.abstract.substring(0, 500) + '...' : paper.abstract;
+    result += `摘要: ${abstractPreview}<br>`;
+  }
+  // 添加arXiv预览链接（可点击的超链接）
+  if (paper.id && paper.id.includes('.')) {
+    result += `【arXiv论文预览：<a href="https://arxiv.org/abs/${paper.id}" target="_blank" style="color: #0066cc; text-decoration: none;">https://arxiv.org/abs/${paper.id}</a>】`;
+  }
+  return result;
+}
+
+function formatAuthor(author) {
+  if (!author) return "未找到作者信息。";
+
+  let result = `<strong>--- 作者信息 ---</strong><br>`;
+  result += `姓名: ${author.name || 'N/A'}<br>`;
+  if (author.id) {
+    result += `ID: ${author.id}<br>`;
+  }
+  if (author.papers && author.papers.length > 0) {
+    result += `相关论文 (${author.papers.length}篇):<br>`;
+    author.papers.slice(0, 20).forEach((paper, index) => {
+      let paperLine = `  ${index + 1}. [ID:${paper.id || 'N/A'}] ${paper.title || '无标题'}`;
+      if (paper.id && paper.id.includes('.')) {
+        paperLine += ` <br>&nbsp;&nbsp;&nbsp;&nbsp;【点击预览：<a href="https://arxiv.org/abs/${paper.id}" target="_blank" style="color: #0066cc; text-decoration: none;">https://arxiv.org/abs/${paper.id}</a>】`;
+      }
+      result += paperLine + '<br>';
+    });
+    if (author.papers.length > 20) {
+      result += `  ...等${author.papers.length - 20}篇更多论文<br>`;
+    }
+  } else {
+    result += `相关论文: 无<br>`;
+  }
+  return result;
+}
+
 async function search() {
   const query = document.getElementById("queryInput").value.trim();
   const resultBox = document.getElementById("queryResult");
 
   if (!query) {
-    resultBox.textContent = "查询内容不能为空！";
+    resultBox.innerHTML = "查询内容不能为空！";
     return;
   }
 
   try {
     // 首先尝试按论文ID查询
     let res = await fetch(`${API_BASE}/papers/${encodeURIComponent(query)}`);
-    let data = await res.json();
-    
-    if (data.success) {
-      resultBox.textContent = "找到论文信息:\n" + JSON.stringify(data, null, 2);
-      return;
+    if (res.ok) {
+      let data = await res.json();
+      if (data.success) {
+        resultBox.innerHTML = formatPaper(data.data);
+        return;
+      }
     }
-    
+
     // 然后尝试按作者名查询
     res = await fetch(`${API_BASE}/authors/${encodeURIComponent(query)}`);
-    data = await res.json();
-    
-    if (data.success) {
-      resultBox.textContent = "找到作者信息:\n" + JSON.stringify(data, null, 2);
-      return;
+    if (res.ok) {
+      let data = await res.json();
+      if (data.success) {
+        resultBox.innerHTML = formatAuthor(data.data);
+        return;
+      }
     }
-    
-    // 接着尝试按分类名查询
-    res = await fetch(`${API_BASE}/categories/${encodeURIComponent(query)}`);
-    data = await res.json();
-    
-    if (data.success) {
-      resultBox.textContent = "找到分类信息:\n" + JSON.stringify(data, null, 2);
-      return;
-    }
-    
+
     // 最后尝试全文搜索论文
     res = await fetch(`${API_BASE}/papers/search?q=${encodeURIComponent(query)}`);
-    data = await res.json();
-    
-    if (data.success && data.data && data.data.length > 0) {
-      resultBox.textContent = "搜索到相关论文:\n" + JSON.stringify(data, null, 2);
-      return;
+    if (res.ok) {
+      let data = await res.json();
+      if (data.success && data.data && data.data.length > 0) {
+        let result = `<strong>搜索到 ${data.data.length} 篇相关论文:</strong><br><br>`;
+        data.data.forEach((paper, index) => {
+          result += `${index + 1}. ${formatPaper(paper)}<br>`;
+        });
+        resultBox.innerHTML = result;
+        return;
+      }
     }
-    
-    resultBox.textContent = "未找到相关信息";
+
+    resultBox.innerHTML = "未找到相关信息";
   } catch (err) {
-    resultBox.textContent = "查询失败: " + err;
+    resultBox.innerHTML = "查询失败: " + err.message;
+    console.error("查询错误:", err);
   }
 }
 
