@@ -1,6 +1,6 @@
 from flask import Blueprint, request, session
-from ..akb.services.recommendation_service import RecommendationService
-from ..core import create_response
+from akb.services.recommendation_service import RecommendationService
+from core import create_response
 from .utils import login_required
 
 recommendations_bp = Blueprint("recommendations", __name__, url_prefix="/api")

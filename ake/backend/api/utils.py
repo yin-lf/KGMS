@@ -1,6 +1,6 @@
 from functools import wraps
 from flask import session
-from ..core import create_response
+from core import create_response
 
 
 def login_required(f):

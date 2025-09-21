@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from ..core import create_response, graph_service
+from core import create_response, graph_service
 from marshmallow import Schema, fields, ValidationError
 
 
@@ -149,13 +149,24 @@ def delete_paper(id):
 
 @papers_bp.route("/search", methods=["GET"])
 def search_papers():
-    """搜索论文"""
+    """搜索论文（支持分页）"""
     try:
         query = request.args.get("q", "").strip()
         if not query:
             return create_response(False, error="Search query cannot be empty"), 400
 
-        papers = graph_service.search_papers(query)
+        # 获取分页参数，设置默认值
+        page = request.args.get("page", 1, type=int)
+        page_size = request.args.get("page_size", 20, type=int)
+        
+        # 验证分页参数
+        if page < 1:
+            return create_response(False, error="Page must be at least 1"), 400
+        if page_size < 1 or page_size > 100:
+            return create_response(False, error="Page size must be between 1 and 100"), 400
+
+        # 调用支持分页的搜索方法
+        papers = graph_service.search_papers(query, page, page_size)
 
         papers_data = [
             {
@@ -169,7 +180,16 @@ def search_papers():
         ]
 
         return create_response(
-            True, data=papers_data, message=f"Found {len(papers_data)} related papers"
+            True, 
+            data={
+                "papers": papers_data,
+                "pagination": {
+                    "page": page,
+                    "page_size": page_size,
+                    "total": len(papers_data)
+                }
+            }, 
+            message=f"Found {len(papers_data)} related papers"
         )
 
     except Exception as e:

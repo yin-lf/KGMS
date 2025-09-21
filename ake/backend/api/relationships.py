@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from marshmallow import Schema, fields, ValidationError
-from ..core import create_response, graph_service
+from core import create_response, graph_service
 
 
 class AuthorPaperLinkSchema(Schema):

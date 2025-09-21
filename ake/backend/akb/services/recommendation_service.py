@@ -24,7 +24,7 @@ class RecommendationService:
                     unique_papers.append(paper)
                     seen_ids.add(paper.pid)
             return unique_papers
-
+    
     @staticmethod
     def _get_recommendations(tx, username: str) -> List[Paper]:
         query = """
@@ -33,7 +33,7 @@ class RecommendationService:
         MATCH (other_user)-[:LIKES]->(recommended_paper:Paper)
         WHERE NOT (target_user)-[:LIKES]->(recommended_paper)
         RETURN DISTINCT recommended_paper.id AS id
-        """
+        """# 推荐算法：找到和当前用户喜欢相同论文的其他用户，然后推荐这些其他用户喜欢但当前用户还没喜欢的论文
         result = tx.run(query, username=username)
         papers = []
         for record in result:

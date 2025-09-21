@@ -1,13 +1,13 @@
 from flask import Blueprint, request
-from marshmallow import Schema, fields, ValidationError
-from ..core import create_response, graph_service
+from marshmallow import Schema, fields, ValidationError, INCLUDE
+from core import create_response, graph_service
 
 data_bp = Blueprint("data", __name__, url_prefix="/api/kg/data")
 
 
 class JsonDataSchema(Schema):
     class Meta:
-        unknown = "INCLUDE"  # 允许包含未定义的字段
+        unknown = INCLUDE  # 允许包含未定义的字段
 
     id = fields.Str(required=True, error_messages={"required": "ID is required"})
     title = fields.Str(required=True, error_messages={"required": "Title is required"})
