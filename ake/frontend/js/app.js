@@ -375,12 +375,12 @@ function formatPaper(paper) {
   if (paper.abstract) {
     // 截断摘要以保持简洁
     const abstractPreview = paper.abstract.length > 500 ? 
-      paper.abstract.substring(0, 500) + '...' : paper.abstract;
+      paper.abstract.substring(0, 750) + '...' : paper.abstract;
     result += `摘要: ${abstractPreview}<br>`;
   }
   // 添加arXiv预览链接（可点击的超链接）
   if (paper.id && paper.id.includes('.')) {
-    result += `【arXiv论文预览：<a href="https://arxiv.org/abs/${paper.id}" target="_blank" style="color: #0066cc; text-decoration: none;">https://arxiv.org/abs/${paper.id}</a>】`;
+    result += `[arXiv论文预览：<a href="https://arxiv.org/abs/${paper.id}" target="_blank" style="color: #0066cc; text-decoration: none;">https://arxiv.org/abs/${paper.id}</a>]`;
   }
   return result;
 }
@@ -397,7 +397,7 @@ function formatAuthor(author) {
     author.papers.slice(0, 20).forEach((paper, index) => {
       let paperLine = `  ${index + 1}. [ID:${paper.id || 'N/A'}] ${paper.title || '无标题'}`;
       if (paper.id && paper.id.includes('.')) {
-        paperLine += ` <br>&nbsp;&nbsp;&nbsp;&nbsp;【点击预览：<a href="https://arxiv.org/abs/${paper.id}" target="_blank" style="color: #0066cc; text-decoration: none;">https://arxiv.org/abs/${paper.id}</a>】`;
+        paperLine += ` <br>&nbsp;&nbsp;&nbsp;&nbsp;[点击预览：<a href="https://arxiv.org/abs/${paper.id}" target="_blank" style="color: #0066cc; text-decoration: none;">https://arxiv.org/abs/${paper.id}</a>]`;
       }
       result += paperLine + '<br>';
     });
@@ -420,7 +420,7 @@ function formatCategory(category) {
     category.papers.slice(0, 20).forEach((paper, index) => {
       let paperLine = `  ${index + 1}. [ID:${paper.id || 'N/A'}] ${paper.title || '无标题'}`;
       if (paper.id && paper.id.includes('.')) {
-        paperLine += ` <br>&nbsp;&nbsp;&nbsp;&nbsp;【点击预览：<a href="https://arxiv.org/abs/${paper.id}" target="_blank" style="color: #0066cc; text-decoration: none;">https://arxiv.org/abs/${paper.id}</a>】`;
+        paperLine += ` <br>&nbsp;&nbsp;&nbsp;&nbsp;[点击预览：<a href="https://arxiv.org/abs/${paper.id}" target="_blank" style="color: #0066cc; text-decoration: none;">https://arxiv.org/abs/${paper.id}</a>]`;
       }
       result += paperLine + '<br>';
     });
@@ -487,15 +487,16 @@ function displayKeywordResults(data, query, resultBox) {
       result += `:</strong><br><br>`;
       
       papers.forEach((paper, index) => {
-          console.log('处理论文:', paper); // 调试每个论文对象
-          
-          const highlightedPaper = {
-              ...paper,
-              title: highlightKeywords(paper.title || '', query),
-              abstract: highlightKeywords(paper.abstract || '', query)
-          };
-          result += `${index + 1}. ${formatPaper(highlightedPaper)}<br>`;
-      });
+        console.log('处理论文:', paper);
+        
+        // 先格式化论文（包含链接换行）
+        let formattedPaper = formatPaper(paper);
+        
+        // 然后在格式化后的文本中进行关键词高亮
+        const highlightedContent = highlightKeywords(formattedPaper, query);
+        
+        result += `${index + 1}. ${highlightedContent}<br>`;
+    });
       
       // 添加分页导航（如果有分页信息）
       if (pagination) {
@@ -515,14 +516,14 @@ function displayKeywordResults(data, query, resultBox) {
       resultBox.innerHTML = "未找到相关论文";
   }
 }
-// 高亮显示匹配的关键词（修复版）
-// 加粗显示匹配的关键词
+// 加粗显示匹配的关键词，修复过度匹配问题
 function highlightKeywords(text, keyword) {
   if (!text || !keyword) return text;
   
   // 转义正则表达式特殊字符
   const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escapedKeyword})`, 'gi');
+  // 使用单词边界\b来确保匹配完整单词，避免过度匹配
+  const regex = new RegExp(`\\b(${escapedKeyword})\\b`, 'gi');
   
   return text.replace(regex, '<strong>$1</strong>');
 }
