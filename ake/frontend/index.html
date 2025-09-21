@@ -42,12 +42,22 @@
     </header>
 
       <!-- 查询模块 -->
-      <section id="query" class="page">
-        <h2>🔍 查询知识图谱</h2>
-        <input id="queryInput" type="text" placeholder="输入作者名/论文ID/分类名">
-        <button onclick="search()">查询</button>
-        <pre id="queryResult"></pre>
-      </section>
+    <section id="query" class="page">
+      <h2>🔍 查询知识图谱</h2>
+      
+      <div class="search-container">
+          <select id="searchType" class="search-select">
+              <option value="paper_id">论文ID</option>
+              <option value="author">作者名称</option>
+              <option value="category">论文分类</option>
+              <option value="keyword">关键词搜索</option>
+          </select>
+          <input id="queryInput" type="text" placeholder="请输入搜索内容...">
+          <button onclick="search()">查询</button>
+      </div>
+      
+      <pre id="queryResult"></pre>
+    </section>
 
       <!-- 新增模块 -->
       <section id="add" class="page hidden">

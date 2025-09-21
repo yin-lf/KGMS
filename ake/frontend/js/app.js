@@ -346,7 +346,6 @@ async function updateCategory() {
 }
 
 /*============查===============*/
-
 function formatPaper(paper) {
   if (!paper) return "未找到论文信息。";
   let result = "";
@@ -362,7 +361,7 @@ function formatPaper(paper) {
   } else {
     result += `作者: N/A<br>`;
   }
-  // 分类信息 - 现在我们知道分类信息可能存在
+  // 分类信息
   if (paper.category) {
     // 如果分类信息直接包含在paper对象中
     result += `分类: ${paper.category.name || paper.category}<br>`;
@@ -385,7 +384,6 @@ function formatPaper(paper) {
   }
   return result;
 }
-
 function formatAuthor(author) {
   if (!author) return "未找到作者信息。";
 
@@ -411,7 +409,6 @@ function formatAuthor(author) {
   }
   return result;
 }
-
 function formatCategory(category) {
   if (!category) return "未找到分类信息。";
   
@@ -436,15 +433,102 @@ function formatCategory(category) {
   
   return result;
 }
-
-// 高亮显示匹配的关键词
+// 在 searchKeyword 函数中添加调试
+function searchKeyword(query, page = 1, pageSize = 20) {
+  const url = `${API_BASE}/papers/search?q=${encodeURIComponent(query)}&page=${page}&page_size=${pageSize}`;
+  
+  console.log('搜索URL:', url);
+  
+  fetch(url)
+      .then(response => {
+          console.log('响应状态:', response.status);
+          return response.json();
+      })
+      .then(data => {
+          console.log('完整响应:', data); // 查看完整响应结构
+          console.log('data.data:', data.data);
+          console.log('data.data.papers:', data.data?.papers);
+          console.log('data.data.pagination:', data.data?.pagination);
+          
+          if (data.success) {
+              const resultBox = document.getElementById('queryResult');
+              displayKeywordResults(data, query, resultBox);
+          } else {
+              alert('搜索失败: ' + (data.error || '未知错误'));
+          }
+      })
+      .catch(error => {
+          console.error('Error:', error);
+          alert('搜索失败');
+      });
+}
+function displayKeywordResults(data, query, resultBox) {
+  // 确保数据结构正确
+  if (!data || !data.data) {
+      resultBox.innerHTML = "响应数据格式错误";
+      return;
+  }
+  
+  const papers = data.data.papers || data.data; // 兼容两种可能的结构
+  const pagination = data.data.pagination;
+  
+  console.log('papers数组:', papers);
+  console.log('pagination:', pagination);
+  
+  if (papers && papers.length > 0) {
+      let result = `<strong>关键词"${query}"搜索到 ${papers.length} 篇相关论文`;
+      
+      // 如果有分页信息，显示分页详情
+      if (pagination) {
+          const totalPages = Math.ceil(pagination.total / pagination.page_size);
+          result += ` (第${pagination.page}页，共${totalPages}页)`;
+      }
+      
+      result += `:</strong><br><br>`;
+      
+      papers.forEach((paper, index) => {
+          console.log('处理论文:', paper); // 调试每个论文对象
+          
+          const highlightedPaper = {
+              ...paper,
+              title: highlightKeywords(paper.title || '', query),
+              abstract: highlightKeywords(paper.abstract || '', query)
+          };
+          result += `${index + 1}. ${formatPaper(highlightedPaper)}<br>`;
+      });
+      
+      // 添加分页导航（如果有分页信息）
+      if (pagination) {
+          const totalPages = Math.ceil(pagination.total / pagination.page_size);
+          result += `<br><div style="margin-top: 15px;">`;
+          if (pagination.page > 1) {
+              result += `<button onclick="searchKeyword('${query}', ${pagination.page - 1}, ${pagination.page_size})" style="margin-right: 10px; padding: 5px 10px;">上一页</button>`;
+          }
+          if (pagination.page < totalPages) {
+              result += `<button onclick="searchKeyword('${query}', ${pagination.page + 1}, ${pagination.page_size})" style="padding: 5px 10px;">下一页</button>`;
+          }
+          result += `</div>`;
+      }
+      
+      resultBox.innerHTML = result;
+  } else {
+      resultBox.innerHTML = "未找到相关论文";
+  }
+}
+// 高亮显示匹配的关键词（修复版）
+// 加粗显示匹配的关键词
 function highlightKeywords(text, keyword) {
   if (!text || !keyword) return text;
-  const regex = new RegExp(`(${keyword})`, 'gi');
-  return text.replace(regex, '<span style="background-color: yellow; font-weight: bold;">$1</span>');
+  
+  // 转义正则表达式特殊字符
+  const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escapedKeyword})`, 'gi');
+  
+  return text.replace(regex, '<strong>$1</strong>');
 }
-
+//查询主函数
 async function search() {
+  const searchType = document.getElementById("searchType").value;
   const query = document.getElementById("queryInput").value.trim();
   const resultBox = document.getElementById("queryResult");
 
@@ -454,57 +538,51 @@ async function search() {
   }
 
   try {
-    // 首先尝试按论文ID查询
-    let res = await fetch(`${API_BASE}/papers/${encodeURIComponent(query)}`);
+    let url;
+    switch (searchType) {
+      case "paper_id":
+        url = `${API_BASE}/papers/${encodeURIComponent(query)}`;
+        break;
+      case "author":
+        url = `${API_BASE}/authors/${encodeURIComponent(query)}`;
+        break;
+      case "category":
+        url = `${API_BASE}/categories/${encodeURIComponent(query)}`;
+        break;
+      case "keyword":
+        // 使用带分页参数的搜索函数
+        searchKeyword(query);
+        return; // 直接返回，因为 searchKeyword 会异步处理
+      default:
+        resultBox.innerHTML = "请选择有效的搜索类型！";
+        return;
+    }
+
+    console.log(`搜索类型: ${searchType}, URL: ${url}`);
+    let res = await fetch(url);
+    
     if (res.ok) {
       let data = await res.json();
       if (data.success) {
-        resultBox.innerHTML = formatPaper(data.data);
+        switch (searchType) {
+          case "paper_id":
+            resultBox.innerHTML = formatPaper(data.data);
+            break;
+          case "author":
+            resultBox.innerHTML = formatAuthor(data.data);
+            break;
+          case "category":
+            resultBox.innerHTML = formatCategory(data.data);
+            break;
+        }
         return;
       }
     }
 
-    // 然后尝试按作者名查询
-    res = await fetch(`${API_BASE}/authors/${encodeURIComponent(query)}`);
-    if (res.ok) {
-      let data = await res.json();
-      if (data.success) {
-        resultBox.innerHTML = formatAuthor(data.data);
-        return;
-      }
-    }
-
-    // 接着尝试按分类名查询
-    res = await fetch(`${API_BASE}/categories/${encodeURIComponent(query)}`);
-    if (res.ok) {
-      let data = await res.json();
-      if (data.success) {
-        resultBox.innerHTML = formatCategory(data.data);
-        return;
-      }
-    }
-
-    // 最后尝试关键词全文搜索（使用全文索引）
-    res = await fetch(`${API_BASE}/papers/search?q=${encodeURIComponent(query)}`);
-    if (res.ok) {
-      let data = await res.json();
-      if (data.success && data.data && data.data.length > 0) {
-        let result = `<strong>关键词"${query}"搜索到 ${data.data.length} 篇相关论文:</strong><br><br>`;
-        data.data.forEach((paper, index) => {
-          // 高亮显示标题和摘要中的关键词
-          const highlightedPaper = {
-            ...paper,
-            title: highlightKeywords(paper.title, query),
-            abstract: highlightKeywords(paper.abstract, query)
-          };
-          result += `${index + 1}. ${formatPaper(highlightedPaper)}<br>`;
-        });
-        resultBox.innerHTML = result;
-        return;
-      }
-    }
-
-    resultBox.innerHTML = "未找到相关信息";
+    // 如果请求不成功
+    const errorText = await res.text();
+    resultBox.innerHTML = `查询失败: ${res.status} ${res.statusText}<br>错误信息: ${errorText}`;
+    
   } catch (err) {
     resultBox.innerHTML = "查询失败: " + err.message;
     console.error("查询错误:", err);
