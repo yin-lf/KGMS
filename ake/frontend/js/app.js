@@ -412,6 +412,38 @@ function formatAuthor(author) {
   return result;
 }
 
+function formatCategory(category) {
+  if (!category) return "未找到分类信息。";
+  
+  let result = `<strong>--- 分类信息 ---</strong><br>`;
+  result += `分类名称: ${category.name || 'N/A'}<br>`;
+  
+  if (category.papers && category.papers.length > 0) {
+    result += `包含论文 (${category.papers.length}篇):<br>`;
+    category.papers.slice(0, 20).forEach((paper, index) => {
+      let paperLine = `  ${index + 1}. [ID:${paper.id || 'N/A'}] ${paper.title || '无标题'}`;
+      if (paper.id && paper.id.includes('.')) {
+        paperLine += ` <br>&nbsp;&nbsp;&nbsp;&nbsp;【点击预览：<a href="https://arxiv.org/abs/${paper.id}" target="_blank" style="color: #0066cc; text-decoration: none;">https://arxiv.org/abs/${paper.id}</a>】`;
+      }
+      result += paperLine + '<br>';
+    });
+    if (category.papers.length > 20) {
+      result += `  ...等${category.papers.length - 20}篇更多论文<br>`;
+    }
+  } else {
+    result += `包含论文: 无<br>`;
+  }
+  
+  return result;
+}
+
+// 高亮显示匹配的关键词
+function highlightKeywords(text, keyword) {
+  if (!text || !keyword) return text;
+  const regex = new RegExp(`(${keyword})`, 'gi');
+  return text.replace(regex, '<span style="background-color: yellow; font-weight: bold;">$1</span>');
+}
+
 async function search() {
   const query = document.getElementById("queryInput").value.trim();
   const resultBox = document.getElementById("queryResult");
@@ -442,14 +474,30 @@ async function search() {
       }
     }
 
-    // 最后尝试全文搜索论文
+    // 接着尝试按分类名查询
+    res = await fetch(`${API_BASE}/categories/${encodeURIComponent(query)}`);
+    if (res.ok) {
+      let data = await res.json();
+      if (data.success) {
+        resultBox.innerHTML = formatCategory(data.data);
+        return;
+      }
+    }
+
+    // 最后尝试关键词全文搜索（使用全文索引）
     res = await fetch(`${API_BASE}/papers/search?q=${encodeURIComponent(query)}`);
     if (res.ok) {
       let data = await res.json();
       if (data.success && data.data && data.data.length > 0) {
-        let result = `<strong>搜索到 ${data.data.length} 篇相关论文:</strong><br><br>`;
+        let result = `<strong>关键词"${query}"搜索到 ${data.data.length} 篇相关论文:</strong><br><br>`;
         data.data.forEach((paper, index) => {
-          result += `${index + 1}. ${formatPaper(paper)}<br>`;
+          // 高亮显示标题和摘要中的关键词
+          const highlightedPaper = {
+            ...paper,
+            title: highlightKeywords(paper.title, query),
+            abstract: highlightKeywords(paper.abstract, query)
+          };
+          result += `${index + 1}. ${formatPaper(highlightedPaper)}<br>`;
         });
         resultBox.innerHTML = result;
         return;
@@ -462,7 +510,6 @@ async function search() {
     console.error("查询错误:", err);
   }
 }
-
 /*============推荐===============*/
 document.addEventListener('DOMContentLoaded', function() {
   // 初始化推荐模块
