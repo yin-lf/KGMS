@@ -8,7 +8,19 @@ from api.relationships import relationships_bp
 from api.data import data_bp
 from api.auth import auth_bp
 from api.recommendations import recommendations_bp
+from akb.services.graph_service import GraphService
 
+# 创建graph_service实例
+graph_service = GraphService()
+# 在应用启动前创建索引
+try:
+    print("正在创建全文索引...")
+    graph_service.create_fulltext_index()
+    print(f"全文索引创建状态: {graph_service.fulltext_index_exists}")
+except Exception as e:
+    print(f"创建索引时出错: {e}")
+    import traceback
+    traceback.print_exc()
 
 app = Flask(__name__)
 app.secret_key = "your-very-secret-key"  # Add a secret key for session management

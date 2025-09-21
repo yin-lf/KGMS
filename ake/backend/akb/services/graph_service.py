@@ -489,6 +489,8 @@ class GraphService:
         RETURN p.id as pid, p.title as title, p.abstract as abstract,
                authors, COLLECT(DISTINCT c.name) as categories, score
         ORDER BY score DESC
+        SKIP $offset
+        LIMIT $limit
         """
         result = tx.run(query, query_string=query_string, skip=skip, limit=limit)
 
