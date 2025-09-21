@@ -5,29 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>知识图谱管理信息系统</title>
   <link rel="stylesheet" href="css/style.css"> <!-- 样式表 -->
-  <link rel="stylesheet" href="css/auth.css"> <!-- 登录界面 -->
   <link rel="stylesheet" href="recommendation.css"> <!-- 推荐界面 -->
 </head>
 <body>
-  <!-- 登录状态栏 -->
-  <div id="authBar" class="auth-bar">
-    <span id="userInfo">未登录</span>
-    <button onclick="Auth.showLoginModal()">登录</button>
-    <button onclick="Auth.logout()" style="display:none;">退出</button>
-  </div>
-
-  <!-- 登录模态框 -->
-  <div id="loginModal" class="modal hidden">
-      <div class="modal-content">
-          <h3>用户登录</h3>
-          <input type="text" id="usernameInput" placeholder="请输入用户名">
-          <div class="modal-actions">
-              <button onclick="Auth.login()">登录</button>
-              <button onclick="Auth.hideLoginModal()">取消</button>
-          </div>
-      </div>
-  </div>
-
+  <!-- 主应用 -->
+  <div id="mainApp">
+    <!-- 登录状态栏 -->
+    <div id="authBar" class="auth-bar">
+      <span id="userInfo">未登录</span>
+      <button id="logoutBtn">退出</button>
+    </div>
   <!-- 主要内容 -->
   <div class="container">
     <header>

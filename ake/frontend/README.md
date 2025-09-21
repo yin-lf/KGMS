@@ -17,15 +17,20 @@
 
 ```
 ake/frontend/           # 前端应用根目录
-├── index.html          # 主入口文件（重命名）
-├── css/               # 样式文件目录
-│   ├── style.css      # 主样式文件
-│   |── auth.css       # 登录相关样式
-|   └── recommendations.css  # 推荐相关样式
-├── js/                # JavaScript文件目录
-|   ├── app.js         # 主应用逻辑
-|   ├── auth.js        # 认证相关功能
-|   └── recommendations.js  # 推荐相关功能
+├── login.html          # 入口文件
+|—— login/
+|   ├── main.js         # login逻辑
+|   ├── defalut.css        # 样式表
+|   └── login.jpg       # 配图
+├── main/               # 主文件目录
+│   ├── css/               # 样式文件目录
+│   |    ├── style.css      # 主样式文件
+|   |    └── recommendations.css  # 推荐相关样式
+|   ├── js/                # JavaScript文件目录
+|   |    ├── app.js         # 主应用逻辑
+|   |    ├── auth.js         # 密码判断以及跳转主页面逻辑
+|   |    └── recommendations.js  # 推荐相关功能
+|   └── main.html      # 主页面入口文件
 └── test_neo4j.py      # 测试是否导入数据
 ```
 
