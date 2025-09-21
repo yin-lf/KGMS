@@ -102,6 +102,101 @@
     flex-wrap: wrap;
   }
   
+  /* 论文卡片样式 */
+  .paper-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .paper-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  }
+  
+  .paper-card h4 {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #2d3748;
+    line-height: 1.4;
+  }
+  
+  .paper-card p {
+    margin-bottom: 8px;
+    color: #4a5568;
+    line-height: 1.5;
+  }
+  
+  .paper-card p strong {
+    color: #2d3748;
+  }
+  
+  /* 论文操作按钮容器 */
+  .paper-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+  }
+  
+  /* 点赞按钮样式 */
+  .like-btn {
+    background-color: #f6ad55;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .like-btn:hover {
+    background-color: #ed8936;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(246, 173, 85, 0.3);
+  }
+  
+  .like-btn:active {
+    transform: translateY(0);
+  }
+  
+  .like-btn.liked {
+    background-color: #e53e3e;
+  }
+  
+  .like-btn.liked:hover {
+    background-color: #c53030;
+  }
+  
+  /* 查看详情按钮样式 */
+  .view-btn {
+    background-color: #4299e1;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+  
+  .view-btn:hover {
+    background-color: #3182ce;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(66, 153, 225, 0.3);
+  }
+  
+  .view-btn:active {
+    transform: translateY(0);
+  }
   .action-btn {
     padding: 12px 20px;
     border: none;
@@ -194,3 +289,4 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
+

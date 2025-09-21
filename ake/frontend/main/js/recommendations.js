@@ -190,7 +190,7 @@ function showMockTrendingPapers() {
 }
 
 // 渲染推荐论文列表
-function renderRecommendations(papers) {
+function renderRecommendations(papers, isLikedView = false) {
     const container = document.getElementById('recommendationList');
     if (!container) return;
 
@@ -201,16 +201,49 @@ function renderRecommendations(papers) {
         return;
     }
 
+    // 获取本地存储的点赞论文ID
+    const likedPapers = JSON.parse(localStorage.getItem('likedPapers') || '[]');
+
     papers.forEach(paper => {
         const paperElement = document.createElement('div');
         paperElement.className = 'paper-card';
+        
+        // 检查论文是否已被点赞
+        const isLiked = likedPapers.includes(paper.id);
+        const likeBtnClass = isLiked ? 'like-btn liked' : 'like-btn';
+        const likeBtnText = isLiked ? '👍 已点赞' : '👍 点赞';
+        
+        // 根据是否是已点赞论文视图决定是否显示完整摘要
+        let abstractDisplay;
+        if (paper.abstract) {
+            if (isLikedView) {
+                // 已点赞论文视图显示完整摘要
+                abstractDisplay = paper.abstract;
+            } else {
+                // 普通视图限制摘要长度
+                abstractDisplay = paper.abstract.length > 100 ? paper.abstract.substring(0, 100) + '...' : paper.abstract;
+            }
+        } else {
+            abstractDisplay = '暂无摘要';
+        }
+        
+        // 处理分类信息，与app.js中的formatPaper函数保持一致
+        let categoryDisplay = '未分类';
+        if (paper.category) {
+            categoryDisplay = paper.category.name || paper.category;
+        } else if (paper.categories && paper.categories.length > 0) {
+            const categoryNames = paper.categories.map(cat => cat.name || cat);
+            categoryDisplay = categoryNames.join(', ');
+        }
+        
         paperElement.innerHTML = `
             <h4>${paper.title || '无标题'}</h4>
             <p><strong>作者:</strong> ${paper.authors ? paper.authors.join(', ') : '未知作者'}</p>
-            <p><strong>分类:</strong> ${paper.category || '未分类'}</p>
-            <p>${paper.abstract ? paper.abstract.substring(0, 100) + '...' : '暂无摘要'}</p>
+            <p><strong>分类:</strong> ${categoryDisplay}</p>
+            <p>${abstractDisplay}</p>
             <div class="paper-actions">
-                <button onclick="likePaper('${paper.id}')" class="like-btn">👍 点赞</button>
+                <button onclick="likePaper('${paper.id}')" class="${likeBtnClass}">${likeBtnText}</button>
+                <button onclick="paperSave('${paper.id}', '${encodeURIComponent(paper.title || '无标题')}')" class="save-btn">📚 收藏</button>
                 <button onclick="viewPaperDetails('${paper.id}')" class="view-btn">查看详情</button>
             </div>
         `;
@@ -255,6 +288,7 @@ async function likePaper(paperId) {
     }
     
     try {
+        // 1. 调用后端API建立用户与论文的"喜欢"关系
         const response = await fetch(`${API_BASE}/recommendations/feedback`, {
             method: 'POST',
             headers: {
@@ -269,6 +303,23 @@ async function likePaper(paperId) {
         
         if (response.ok) {
             console.log('已点赞论文:', paperId);
+            
+            // 2. 将点赞的论文信息记录在本地存储
+            const likedPapers = JSON.parse(localStorage.getItem('likedPapers') || '[]');
+            if (!likedPapers.includes(paperId)) {
+                likedPapers.push(paperId);
+                localStorage.setItem('likedPapers', JSON.stringify(likedPapers));
+                console.log('论文已添加到本地点赞列表');
+            }
+            
+            // 3. 立即更新按钮状态
+            const buttons = document.querySelectorAll(`button[onclick="likePaper('${paperId}')"]`);
+            buttons.forEach(button => {
+                button.textContent = '👍 已点赞';
+                button.classList.add('liked');
+            });
+            
+            // 4. 显示点赞成功提示
             alert('点赞成功！');
         } else {
             throw new Error(`点赞失败: ${response.status}`);
@@ -281,9 +332,9 @@ async function likePaper(paperId) {
 
 // 查看论文详情
 function viewPaperDetails(paperId) {
-    console.log('查看论文详情:', paperId);
-    // 这里可以跳转到详情页面或显示模态框
-    alert(`查看论文详情: ${paperId}\n实际应用中这里会跳转到详情页面`);
+    // 跳转到ArXiv网站查看论文详情
+    const arxivUrl = `https://arxiv.org/abs/${paperId}`;
+    window.open(arxivUrl, '_blank');
 }
 
 // 刷新推荐
@@ -356,3 +407,86 @@ document.addEventListener('userLoggedOut', function() {
         refreshBtn.style.display = 'none';
     }
 });
+
+// 查看已点赞的论文
+async function viewLikedPapers() {
+    if (!Auth.currentUser) {
+        alert('请先登录以查看您的点赞');
+        return;
+    }
+    
+    try {
+        // 从localStorage中获取已点赞的论文ID
+        const likedPapers = JSON.parse(localStorage.getItem('likedPapers') || '[]');
+        
+        if (likedPapers.length === 0) {
+            alert('您还没有点赞任何论文');
+            return;
+        }
+        
+        console.log('已点赞的论文ID列表:', likedPapers);
+        
+        // 显示加载状态
+        const container = document.getElementById('recommendationList');
+        const titleElement = document.getElementById('recommendationTitle');
+        
+        if (container) {
+            container.innerHTML = '<div class="loading">正在加载您点赞的论文...</div>';
+        }
+        
+        if (titleElement) {
+            titleElement.textContent = '您点赞的论文';
+        }
+        
+        // 创建一个数组来存储论文详情
+        const likedPapersDetails = [];
+        
+        // 遍历已点赞的论文ID，获取论文详情
+        for (const paperId of likedPapers) {
+            try {
+                // 调用搜索API获取论文详情
+                const searchResponse = await fetch(`${API_BASE}/papers/${paperId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (searchResponse.ok) {
+                    const searchData = await searchResponse.json();
+                    if (searchData.success && searchData.data) {
+                        likedPapersDetails.push(searchData.data);
+                    }
+                } else {
+                    console.warn(`获取论文ID: ${paperId} 的详情失败`);
+                }
+            } catch (error) {
+                console.error(`获取论文ID: ${paperId} 的详情时出错:`, error);
+            }
+        }
+        
+        // 如果没有找到任何论文详情，显示提示
+        if (likedPapersDetails.length === 0) {
+            container.innerHTML = '<p>暂时无法显示您点赞的论文，请稍后再试</p>';
+            return;
+        }
+        
+        // 渲染已点赞的论文列表，传递isLikedView=true以显示完整摘要
+        renderRecommendations(likedPapersDetails, true);
+        
+    } catch (error) {
+        console.error('查看已点赞论文失败:', error);
+        alert('查看已点赞论文失败，请稍后再试');
+    }
+}
+
+// 查看大家在看的热门论文
+function viewPopularPapers() {
+    getTrendingPapers();
+    
+    // 更新标题
+    const titleElement = document.getElementById('recommendationTitle');
+    if (titleElement) {
+        titleElement.textContent = '大家在看';
+    }
+}
