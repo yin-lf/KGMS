@@ -1,2 +1,13 @@
 .vscode/
+
+.venv/
 .pytest_cache/
+__pycache__/
+*.pyc
+
+arxiv-metadata-oai-snapshot.json
+output/
+
+config.py
+
+uv.lock
