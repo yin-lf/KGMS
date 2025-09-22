@@ -104,7 +104,7 @@ KGMS (Knowledge Graph Management System) 是一个功能完备的知识图谱管
 
 ### 3. 前端访问
 
-直接在浏览器中打开 `ake/frontend/pages.html` 文件即可访问前端页面。前端应用将自动连接到本地运行的后端服务。
+直接在浏览器中打开 `ake/frontend/login.html` 文件即可访问登录界面，登录成功后自动跳转至main.html主页面。前端应用将自动连接到本地运行的后端服务。
 
 ## 详细文档
 
