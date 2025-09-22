@@ -32,14 +32,39 @@ KGMS (Knowledge Graph Management System) 是一个功能完备的知识图谱管
     ├── backend/            # 后端应用
     │   ├── app.py          # Flask 应用入口
     │   ├── api/            # API 路由定义
+    │   │   ├── auth.py          # 用户认证API
+    │   │   ├── authors.py       # 作者相关API
+    │   │   ├── papers.py        # 论文相关API
+    │   │   ├── categories.py    # 分类相关API
+    │   │   ├── relationships.py # 关系查询API
+    │   │   ├── recommendations.py # 推荐相关API
+    │   │   └── data.py          # 数据管理API
     │   ├── akb/            # 核心业务与数据库服务
-    │   ├── .gitignore      # 后端 git 忽略配置
-    │   ├── pyproject.toml  # 项目依赖与配置 (uv)
-    │   └── README.md       # 后端详细说明
+    │   │   ├── services/        # 图数据库服务层
+    │   │   │   ├── graph_service.py
+    │   │   │   ├── user_service.py
+    │   │   │   └── recommendation_service.py
+    │   │   ├── db/              # 数据库连接和模型
+    │   │   └── const.py         # 常量定义
+    │   ├── test/               # 测试文件
+    │   ├── utils/              # 工具函数
+    │   └── README.md          # 后端详细说明
     └── frontend/           # 前端应用
-        ├── pages.html      # 主页面
-        ├── app.js          # 前端逻辑
-        └── style.css       # 样式表
+        ├── login.html          # 登录入口文件
+        ├── login/              # 登录相关资源
+        │   ├── main.js         # login逻辑
+        │   ├── defalut.css     # 样式表
+        │   └── login.jpg       # 配图
+        ├── main/               # 主应用目录
+        │   ├── css/            # 样式文件
+        │   │   ├── style.css      # 主样式文件
+        │   │   └── recommendations.css  # 推荐相关样式
+        │   ├── js/             # JavaScript文件
+        │   │   ├── app.js         # 主应用逻辑
+        │   │   ├── auth.js        # 密码判断以及跳转主页面逻辑
+        │   │   └── recommendations.js  # 推荐相关功能
+        │   └── main.html       # 主页面入口文件
+        └── test_neo4j.py      # 测试neo4j导入数据
 ```
 
 ## 快速开始
