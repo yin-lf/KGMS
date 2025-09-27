@@ -231,3 +231,79 @@ button {
 button:hover {
   background-color: #0056b3;
 }
+
+/* 搜索历史功能样式 */
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.search-history-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.search-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.clear-history-btn {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 6px;
+}
+
+.clear-history-btn:hover {
+  background: #f8d7da;
+  border-radius: 3px;
+}
+
+.search-history-list {
+  padding: 0;
+}
+
+.search-history-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f1f1;
+  font-size: 14px;
+}
+
+.search-history-item:hover {
+  background: #f8f9fa;
+}
+
+.search-history-item:last-child {
+  border-bottom: none;
+}
+
+.search-history-item .search-type {
+  color: #6c757d;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.search-history-item .search-time {
+  color: #adb5bd;
+  font-size: 11px;
+  float: right;
+}
