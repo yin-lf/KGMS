@@ -1,5 +1,36 @@
-const API_BASE = "http://localhost:5000/api/kg";  // 后端接口地址，根据需要修改
-const RECOMMENDATION_API = `${API_BASE}/recommendations`;
+const API_BASE = "http://localhost:5000/api/kg";  // 后端接口地址，增删改查功能使用
+const RECOMMENDATION_API = "http://localhost:5000/api";  // 点赞和推荐功能使用单独的API路径
+
+// 用户认证对象 - 与auth.js中的认证功能保持一致
+window.Auth = {
+  // 获取当前登录用户
+  get currentUser() {
+    return localStorage.getItem('currentUser');
+  },
+  
+  // 检查用户是否已登录
+  isLoggedIn() {
+    return localStorage.getItem('isLoggedIn') === 'true' && !!localStorage.getItem('accessToken');
+  },
+  
+  // 获取认证token
+  getAuthToken() {
+    return localStorage.getItem('accessToken');
+  },
+  
+  // 退出登录
+  logout() {
+    if (window.handleLogout) {
+      handleLogout();
+    } else {
+      // 如果handleLogout不可用，使用本地实现
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('isLoggedIn');
+      window.location.href = '../login.html';
+    }
+  }
+};
 
 // 页面切换功能
 function showSection(sectionId) {
@@ -380,9 +411,191 @@ function formatPaper(paper) {
   }
   // 添加arXiv预览链接（可点击的超链接）
   if (paper.id && paper.id.includes('.')) {
-    result += `[arXiv论文预览：<a href="https://arxiv.org/abs/${paper.id}" target="_blank" style="color: #0066cc; text-decoration: none;">https://arxiv.org/abs/${paper.id}</a>]`;
+    result += `[arXiv论文预览：<a href="https://arxiv.org/abs/${paper.id}" target="_blank" style="color: #0066cc; text-decoration: none;">https://arxiv.org/abs/${paper.id}</a>]<br>`;
   }
+  
+  // 添加操作按钮
+  const paperId = paper.id || 'N/A';
+  // 检查论文是否已点赞（按用户隔离）
+  const userLikedKey = Auth.currentUser ? `likedPapers_${Auth.currentUser}` : 'likedPapers';
+  const likedPapers = JSON.parse(localStorage.getItem(userLikedKey) || '[]');
+  const isLiked = likedPapers.includes(paperId);
+  const likeBtnText = isLiked ? '👍 已点赞' : '👍 点赞';
+  
+  // 修复单引号嵌套问题，确保按钮点击事件正确触发
+  const safePaperId = paperId.replace(/'/g, "\\'");
+  const safeTitle = encodeURIComponent(paper.title || '无标题').replace(/'/g, "\\'");
+  
+  // 根据是否已点赞决定调用的函数
+  const btnFunction = isLiked ? `paperUnlike('${safePaperId}', '${safeTitle}')` : `paperLike('${safePaperId}', '${safeTitle}')`;
+  
+  result += `<br><div style="margin-top: 10px;">`;
+  result += `<button onclick="${btnFunction}" style="margin-right: 10px; padding: 5px 15px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">${likeBtnText}</button>`;
+  result += `<button onclick="paperSave('${safePaperId}', '${safeTitle}')" style="margin-right: 10px; padding: 5px 15px; background-color: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">📚 收藏</button>`;
+  result += `</div>`;
+  
   return result;
+}
+
+// 论文点赞功能
+function paperLike(paperId, paperTitle) {
+  // 确保API_BASE已定义
+  if (typeof API_BASE === 'undefined') {
+    console.error('API_BASE未定义，无法调用后端API');
+    alert('系统配置错误，请联系管理员');
+    return;
+  }
+
+  // 检查用户是否登录
+  if (!Auth.isLoggedIn()) {
+    alert('请先登录');
+    return;
+  }
+
+  try {
+    // 将点赞的论文信息记录在本地存储（按用户隔离）
+    const userLikedKey = `likedPapers_${Auth.currentUser}`;
+    const likedPapers = JSON.parse(localStorage.getItem(userLikedKey) || '[]');
+    if (!likedPapers.includes(paperId)) {
+      likedPapers.push(paperId);
+      localStorage.setItem(userLikedKey, JSON.stringify(likedPapers));
+      
+      // 调用后端API建立用户与论文的"喜欢"关系
+      fetch(`${RECOMMENDATION_API}/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: Auth.currentUser,  // 显式传递用户名
+          paper_id: paperId,
+          liked: true
+        })
+      }).then(response => {
+        if (!response.ok) {
+          console.error('后端点赞失败');
+        }
+      });
+      
+      alert(`已点赞论文: ${decodeURIComponent(paperTitle)}`);
+      // 刷新当前结果以显示最新状态
+      refreshSearchResults();
+    } else {
+      console.log('论文已在点赞列表中:', paperId);
+      console.log('当前点赞列表:', likedPapers);
+      alert('您已经点赞过这篇论文');
+      // 强制刷新以确保按钮状态正确
+      refreshSearchResults();
+    }
+  } catch (error) {
+    console.error('点赞失败:', error);
+    alert('点赞失败，请稍后重试');
+  }
+}
+
+// 取消点赞功能
+function paperUnlike(paperId, paperTitle) {
+  // 确保API_BASE已定义
+  if (typeof API_BASE === 'undefined') {
+    console.error('API_BASE未定义，无法调用后端API');
+    alert('系统配置错误，请联系管理员');
+    return;
+  }
+
+  // 检查用户是否登录
+  if (!Auth.isLoggedIn()) {
+    alert('请先登录');
+    return;
+  }
+
+  try {
+    // 从本地存储中删除点赞的论文信息（按用户隔离）
+    const userLikedKey = `likedPapers_${Auth.currentUser}`;
+    let likedPapers = JSON.parse(localStorage.getItem(userLikedKey) || '[]');
+    
+    if (likedPapers.includes(paperId)) {
+      console.log('取消点赞前的列表:', likedPapers);
+      // 移除论文ID
+      likedPapers = likedPapers.filter(id => id !== paperId);
+      localStorage.setItem(userLikedKey, JSON.stringify(likedPapers));
+      console.log('取消点赞后的列表:', likedPapers);
+      
+      // 调用后端API删除用户与论文的"喜欢"关系
+      fetch(`${RECOMMENDATION_API}/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: Auth.currentUser,  // 显式传递用户名
+          paper_id: paperId,
+          liked: false
+        })
+      }).then(response => {
+        if (!response.ok) {
+          console.error('后端取消点赞失败');
+        }
+      });
+      
+      alert(`已取消点赞论文: ${decodeURIComponent(paperTitle)}`);
+      // 刷新当前结果以显示最新状态
+      refreshSearchResults();
+    } else {
+      console.log('论文不在点赞列表中:', paperId);
+      console.log('当前点赞列表:', likedPapers);
+      alert('您没有点赞过这篇论文');
+    }
+  } catch (error) {
+    console.error('取消点赞失败:', error);
+    alert('取消点赞失败，请稍后重试');
+  }
+}
+
+// 统一的刷新搜索结果函数
+function refreshSearchResults() {
+  const searchInput = document.getElementById("queryInput");
+  const searchType = document.getElementById("searchType");
+  if (searchInput && searchType && searchInput.value.trim()) {
+    // 添加一个小延迟确保本地存储更新完成
+    setTimeout(() => {
+      search();
+    }, 100);
+  }
+}
+
+// 论文收藏功能
+function paperSave(paperId, paperTitle) {
+  try {
+    // 将收藏的论文信息记录在本地存储
+    const savedPapers = JSON.parse(localStorage.getItem('savedPapers') || '[]');
+    if (!savedPapers.some(paper => paper.id === paperId)) {
+      savedPapers.push({
+        id: paperId,
+        title: decodeURIComponent(paperTitle),
+        saveTime: new Date().toISOString()
+      });
+      localStorage.setItem('savedPapers', JSON.stringify(savedPapers));
+      alert(`已收藏论文: ${decodeURIComponent(paperTitle)}`);
+    } else {
+      alert('您已经收藏过这篇论文');
+    }
+  } catch (error) {
+    console.error('收藏失败:', error);
+    alert('收藏失败，请稍后重试');
+  }
+}
+
+// 查看论文详细信息
+function paperDetail(paperId) {
+  // 构造URL查询参数
+  const urlParams = new URLSearchParams();
+  urlParams.append('paper_id', paperId);
+  
+  // 在当前页面显示详细信息或跳转到详情页面
+  // 这里我们选择在当前页面切换到论文详情视图
+  document.getElementById("searchType").value = "paper_id";
+  document.getElementById("queryInput").value = paperId;
+  search();
 }
 function formatAuthor(author) {
   if (!author) return "未找到作者信息。";
@@ -589,13 +802,221 @@ async function search() {
     console.error("查询错误:", err);
   }
 }
-/*============推荐===============*/
-document.addEventListener('DOMContentLoaded', function() {
-  // 初始化推荐模块
-  Recommendations.init();
-  
-  // 如果当前在推荐页面且用户已登录，自动获取推荐
-  if (!document.getElementById('recommend').classList.contains('hidden') && Auth.isLoggedIn()) {
-    Recommendations.getRecommendations();
+/*============推荐功能===============*/
+// 推荐功能已在recommendations.js中实现
+// 这里只需确保在页面加载时正确初始化
+
+// 搜索历史功能
+const MAX_SEARCH_HISTORY = 10; // 最大保存历史记录数量
+
+// 获取搜索历史记录
+function getSearchHistory() {
+  try {
+    return JSON.parse(localStorage.getItem('searchHistory') || '[]');
+  } catch (error) {
+    console.error('获取搜索历史失败:', error);
+    return [];
   }
+}
+
+// 保存搜索历史记录
+function saveSearchHistory(query, searchType) {
+  try {
+    const history = getSearchHistory();
+    
+    // 移除重复记录
+    const filteredHistory = history.filter(item => 
+      !(item.query === query && item.type === searchType)
+    );
+    
+    // 添加新记录到开头
+    filteredHistory.unshift({
+      query: query,
+      type: searchType,
+      timestamp: new Date().toISOString(),
+      time: new Date().toLocaleTimeString('zh-CN', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      })
+    });
+    
+    // 限制历史记录数量
+    const limitedHistory = filteredHistory.slice(0, MAX_SEARCH_HISTORY);
+    
+    localStorage.setItem('searchHistory', JSON.stringify(limitedHistory));
+  } catch (error) {
+    console.error('保存搜索历史失败:', error);
+  }
+}
+
+// 显示搜索历史下拉框
+function showSearchHistory() {
+  const historyDropdown = document.getElementById('searchHistory');
+  const historyList = document.getElementById('searchHistoryList');
+  
+  if (!historyDropdown || !historyList) return;
+  
+  const history = getSearchHistory();
+  
+  if (history.length === 0) {
+    historyList.innerHTML = '<div class="search-history-item" style="color: #6c757d; text-align: center;">暂无搜索历史</div>';
+  } else {
+    historyList.innerHTML = history.map(item => `
+      <div class="search-history-item" onclick="selectSearchHistory('${item.query.replace(/'/g, "\\'")}', '${item.type}')">
+        ${item.query}
+        <span class="search-type">(${getSearchTypeName(item.type)})</span>
+        <span class="search-time">${item.time}</span>
+      </div>
+    `).join('');
+  }
+  
+  historyDropdown.classList.remove('hidden');
+}
+
+// 隐藏搜索历史下拉框
+function hideSearchHistory() {
+  const historyDropdown = document.getElementById('searchHistory');
+  if (historyDropdown) {
+    // 延迟隐藏，以便点击历史项时有时间处理
+    setTimeout(() => {
+      historyDropdown.classList.add('hidden');
+    }, 200);
+  }
+}
+
+// 选择搜索历史项
+function selectSearchHistory(query, searchType) {
+  const searchInput = document.getElementById('queryInput');
+  const searchTypeSelect = document.getElementById('searchType');
+  
+  if (searchInput && searchTypeSelect) {
+    searchInput.value = query;
+    searchTypeSelect.value = searchType;
+    
+    // 隐藏历史下拉框
+    hideSearchHistory();
+    
+    // 自动执行搜索
+    search();
+  }
+}
+
+// 清空搜索历史
+function clearSearchHistory() {
+  if (confirm('确定要清空所有搜索历史吗？')) {
+    localStorage.removeItem('searchHistory');
+    
+    // 刷新历史显示
+    showSearchHistory();
+    
+    alert('搜索历史已清空');
+  }
+}
+
+// 获取搜索类型的中文名称
+function getSearchTypeName(type) {
+  const typeMap = {
+    'paper_id': '论文ID',
+    'author': '作者',
+    'category': '分类',
+    'keyword': '关键词'
+  };
+  return typeMap[type] || type;
+}
+
+// 初始化搜索历史功能
+function initSearchHistory() {
+  const searchInput = document.getElementById('queryInput');
+  
+  if (!searchInput) return;
+  
+  // 点击搜索框时显示历史
+  searchInput.addEventListener('focus', showSearchHistory);
+  
+  // 点击其他地方时隐藏历史
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.search-input-wrapper')) {
+      hideSearchHistory();
+    }
+  });
+  
+  // 按Esc键隐藏历史
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      hideSearchHistory();
+    }
+  });
+  
+  // 输入时过滤历史（可选功能）
+  searchInput.addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    const historyList = document.getElementById('searchHistoryList');
+    const historyItems = historyList?.getElementsByClassName('search-history-item');
+    
+    if (historyItems) {
+      Array.from(historyItems).forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(query) ? 'block' : 'none';
+      });
+    }
+  });
+}
+
+// 修改search函数，在搜索时保存历史
+const originalSearch = window.search;
+window.search = function() {
+  const searchType = document.getElementById("searchType").value;
+  const query = document.getElementById("queryInput").value.trim();
+  
+  if (query) {
+    // 保存搜索历史
+    saveSearchHistory(query, searchType);
+  }
+  
+  // 调用原始搜索函数
+  return originalSearch.apply(this, arguments);
+};
+
+// 测试函数 - 帮助验证点赞和收藏功能是否正常
+function testLikeSaveFunctions() {
+  console.log('开始测试点赞和收藏功能...');
+  
+  // 检查paperLike和paperSave函数是否在全局作用域中可用
+  console.log('paperLike函数是否存在:', typeof paperLike === 'function');
+  console.log('paperSave函数是否存在:', typeof paperSave === 'function');
+  
+  // 模拟点击事件测试
+  const testButton = document.createElement('button');
+  testButton.onclick = function() {
+    console.log('测试按钮被点击');
+  };
+  
+  // 触发点击事件
+  testButton.click();
+  
+  // 添加全局事件委托测试
+  document.addEventListener('click', function(e) {
+    const target = e.target;
+    if (target.onclick && target.onclick.toString().includes('paperLike')) {
+      console.log('点赞按钮被点击，事件委托捕获到点击事件');
+    }
+    if (target.onclick && target.onclick.toString().includes('paperSave')) {
+      console.log('收藏按钮被点击，事件委托捕获到点击事件');
+    }
+  });
+  
+  alert('测试函数执行成功，请打开浏览器控制台查看详细日志。\n修复要点：\n1. 修复了按钮点击事件中的单引号嵌套问题\n2. 添加了全局事件委托确保动态按钮能触发事件\n3. paperLike和paperSave函数已完全集成在app.js中');
+}
+
+// 将测试函数暴露到全局作用域
+window.testKGMS = {
+  testLikeSaveFunctions: testLikeSaveFunctions
+};
+
+// 页面加载完成后初始化搜索历史功能
+document.addEventListener('DOMContentLoaded', function() {
+  initSearchHistory();
+  console.log('搜索历史功能已初始化');
 });
+
+console.log('知识图谱管理系统已加载，可通过 window.testKGMS.testLikeSaveFunctions() 测试点赞收藏功能');

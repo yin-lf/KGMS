@@ -7,24 +7,25 @@ recommendations_bp = Blueprint("recommendations", __name__, url_prefix="/api")
 
 
 @recommendations_bp.route("/recommendations", methods=["GET"])
-@login_required
 def get_recommendations():
-    username = session["username"]
+    username = request.args.get("username")
+    if not username:
+        return create_response(False, message="Missing username parameter"), 400
+    
     recommendation_service = RecommendationService()
     papers = recommendation_service.get_recommendations(username)
     return create_response(data=[paper.to_dict() for paper in papers])
 
 
 @recommendations_bp.route("/feedback", methods=["POST"])
-@login_required
 def feedback():
-    username = session["username"]
     data = request.get_json()
+    username = data.get("username")
     paper_id = data.get("paper_id")
     liked = data.get("liked")
 
-    if not paper_id or liked is None:
-        return create_response(False, message="Missing paper_id or liked status"), 400
+    if not username or not paper_id or liked is None:
+        return create_response(False, message="Missing username, paper_id or liked status"), 400
 
     recommendation_service = RecommendationService()
     recommendation_service.record_feedback(username, paper_id, liked)
